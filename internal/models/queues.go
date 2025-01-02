@@ -1,6 +1,9 @@
 package models
 
-import "github.com/VladSatyshev/concurrent-queue/pkg/utils"
+import (
+	"github.com/VladSatyshev/concurrent-queue/pkg/logger"
+	"github.com/VladSatyshev/concurrent-queue/pkg/utils"
+)
 
 type Queue struct {
 	Name           string
@@ -57,9 +60,10 @@ func (q *Queue) SetMessagesSeenBy(name string) {
 	}
 }
 
-func (q *Queue) DeleteSeenByAllMessages() {
+func (q *Queue) DeleteSeenByAllMessages(logger logger.Logger) {
 	for messageID, message := range q.Messages {
 		if len(message.SeenBy) == len(q.Subscribers) {
+			logger.Warnf("message with message ID %s has been deleted from queue %s", messageID, q.Name)
 			delete(q.Messages, messageID)
 		}
 	}
