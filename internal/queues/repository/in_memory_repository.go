@@ -38,7 +38,7 @@ func NewQueuesRepository(cfg *config.Config) (queues.Repository, error) {
 func (r *queuesRepo) GetByName(ctx context.Context, name string) (models.Queue, error) {
 	queue, ok := r.queues[name]
 	if !ok {
-		return models.Queue{}, queues.NewQueueErr(queues.RepositoryErr, fmt.Sprintf("queue %s not found", queue.Name))
+		return models.Queue{}, queues.NewQueueErr(queues.RepositoryNotFoundErr, fmt.Sprintf("queue %s not found", queue.Name))
 	}
 
 	return queue, nil
@@ -57,7 +57,7 @@ func (r *queuesRepo) GetAll(ctx context.Context) []models.Queue {
 func (r *queuesRepo) AddMessage(ctx context.Context, name string, jsonMsgBody map[string]interface{}) error {
 	q, ok := r.queues[name]
 	if !ok {
-		return queues.NewQueueErr(queues.RepositoryErr, fmt.Sprintf("queue %s not found", name))
+		return queues.NewQueueErr(queues.RepositoryNotFoundErr, fmt.Sprintf("queue %s not found", name))
 	}
 
 	q.AddMessage(jsonMsgBody)
@@ -68,7 +68,7 @@ func (r *queuesRepo) AddMessage(ctx context.Context, name string, jsonMsgBody ma
 func (r *queuesRepo) AddSubscriber(ctx context.Context, queueName string, subscriberName string) error {
 	q, ok := r.queues[queueName]
 	if !ok {
-		return queues.NewQueueErr(queues.RepositoryErr, fmt.Sprintf("queue %s not found", queueName))
+		return queues.NewQueueErr(queues.RepositoryNotFoundErr, fmt.Sprintf("queue %s not found", queueName))
 	}
 
 	q.Subscribers[subscriberName] = struct{}{}

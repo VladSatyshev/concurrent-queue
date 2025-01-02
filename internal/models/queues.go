@@ -45,7 +45,7 @@ func (q *Queue) GetNotSeenMessages(name string) map[string]interface{} {
 
 	for messageID, message := range q.Messages {
 		if _, ok := message.SeenBy[name]; !ok {
-			res[messageID] = message
+			res[messageID] = message.Body
 		}
 	}
 

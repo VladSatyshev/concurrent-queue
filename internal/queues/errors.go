@@ -2,7 +2,9 @@ package queues
 
 const (
 	RepositoryErr = iota
+	RepositoryNotFoundErr
 	UseCaseErr
+	UseCaseNotFoundErr
 )
 
 type QueueErr struct {

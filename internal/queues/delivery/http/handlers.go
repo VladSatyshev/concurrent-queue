@@ -21,12 +21,18 @@ func NewQueuesHndlers(cfg *config.Config, queuesUC queues.UseCase, log logger.Lo
 	return &queuesHandlers{cfg: cfg, queuesUC: queuesUC, logger: log}
 }
 
-func HandleError(c *gin.Context, err queues.QueueErr) {
-	switch err.ErrType {
-	case queues.RepositoryErr:
+func handleError(c *gin.Context, err error) {
+	if qErr, ok := err.(*queues.QueueErr); !ok {
 		c.JSON(http.StatusInternalServerError, err.Error())
-	case queues.UseCaseErr:
-		c.JSON(http.StatusBadRequest, err.Error())
+	} else {
+		switch qErr.ErrType {
+		case queues.RepositoryErr, queues.RepositoryNotFoundErr:
+			c.JSON(http.StatusInternalServerError, err.Error())
+		case queues.UseCaseNotFoundErr:
+			c.JSON(http.StatusNotFound, err.Error())
+		case queues.UseCaseErr:
+			c.JSON(http.StatusBadRequest, err.Error())
+		}
 	}
 }
 
@@ -43,7 +49,7 @@ func (h *queuesHandlers) GetQueueByName() func(c *gin.Context) {
 
 		queue, err := h.queuesUC.GetByName(c.Request.Context(), name)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, err.Error())
+			handleError(c, err)
 			return
 		}
 
@@ -58,13 +64,13 @@ func (h *queuesHandlers) Subscribe() func(c *gin.Context) {
 
 		subscriberName, err := utils.GetSubscriber(c)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, err.Error())
+			handleError(c, err)
 			return
 		}
 
 		err = h.queuesUC.AddSubscriber(c.Request.Context(), queueName, subscriberName)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, err.Error())
+			handleError(c, err)
 			return
 		}
 
@@ -77,14 +83,15 @@ func (h *queuesHandlers) AddMessage() func(c *gin.Context) {
 		queueName := c.Param("queue_name")
 
 		var jsonBody map[string]interface{}
-		if err := c.BindJSON(&jsonBody); err != nil {
-			c.JSON(http.StatusBadRequest, err.Error())
+		if err := c.Bind(&jsonBody); err != nil {
+			h.logger.Errorf("failed to parse json body: %s", err.Error())
+			handleError(c, err)
 			return
 		}
 
 		err := h.queuesUC.AddMessage(c.Request.Context(), queueName, jsonBody)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, err.Error())
+			handleError(c, err)
 			return
 		}
 
@@ -98,13 +105,13 @@ func (h *queuesHandlers) Consume() func(c *gin.Context) {
 
 		subscriberName, err := utils.GetSubscriber(c)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, err.Error())
+			handleError(c, err)
 			return
 		}
 
 		messages, err := h.queuesUC.ConsumeMessages(c.Request.Context(), queueName, subscriberName)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, err.Error())
+			handleError(c, err)
 			return
 		}
 

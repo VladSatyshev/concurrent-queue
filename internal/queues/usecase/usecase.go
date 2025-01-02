@@ -24,10 +24,24 @@ func NewQueuesUseCase(cfg *config.Config, queuesRepo queues.Repository, logger l
 	}
 }
 
+func (u *queuesUC) getByName(ctx context.Context, name string) (models.Queue, error) {
+	queue, err := u.queuesRepo.GetByName(ctx, name)
+	if err != nil {
+		if qErr, ok := err.(*queues.QueueErr); ok {
+			if qErr.ErrType == queues.RepositoryNotFoundErr {
+				u.logger.Errorf("queue %s was not found", name)
+				return models.Queue{}, queues.NewQueueErr(queues.UseCaseNotFoundErr, "Queue not found")
+			}
+		}
+		return models.Queue{}, err
+	}
+	return queue, nil
+}
+
 // get queue by name
 func (u *queuesUC) GetByName(ctx context.Context, name string) (models.Queue, error) {
 	u.logger.Info("GetByName UC is in action")
-	queue, err := u.queuesRepo.GetByName(ctx, name)
+	queue, err := u.getByName(ctx, name)
 	if err != nil {
 		return models.Queue{}, err
 	}
@@ -45,7 +59,7 @@ func (u *queuesUC) GetAll(ctx context.Context) []models.Queue {
 // add message to queue
 func (u *queuesUC) AddMessage(ctx context.Context, name string, jsonBody map[string]interface{}) error {
 	u.logger.Info("AddMessage UC is in action")
-	queue, err := u.queuesRepo.GetByName(ctx, name)
+	queue, err := u.getByName(ctx, name)
 	if err != nil {
 		return err
 	}
@@ -66,7 +80,7 @@ func (u *queuesUC) AddMessage(ctx context.Context, name string, jsonBody map[str
 // add subscriber to queue
 func (u *queuesUC) AddSubscriber(ctx context.Context, queueName string, subscriberName string) error {
 	u.logger.Info("AddSubscriber UC is in action")
-	queue, err := u.queuesRepo.GetByName(ctx, queueName)
+	queue, err := u.getByName(ctx, queueName)
 	if err != nil {
 		return err
 	}
@@ -89,7 +103,7 @@ func (u *queuesUC) AddSubscriber(ctx context.Context, queueName string, subscrib
 // consume messages from queue by subscriber
 func (u *queuesUC) ConsumeMessages(ctx context.Context, queueName string, subscriberName string) (map[string]interface{}, error) {
 	u.logger.Info("ConsumeMessages UC is in action")
-	queue, err := u.queuesRepo.GetByName(ctx, queueName)
+	queue, err := u.getByName(ctx, queueName)
 	if err != nil {
 		return nil, err
 	}
