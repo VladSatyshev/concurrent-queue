@@ -36,14 +36,10 @@ func (u *queuesUC) GetByName(ctx context.Context, name string) (models.Queue, er
 }
 
 // get all queues
-func (u *queuesUC) GetAll(ctx context.Context) ([]models.Queue, error) {
+func (u *queuesUC) GetAll(ctx context.Context) []models.Queue {
 	u.logger.Info("GetAll UC is in action")
-	queues, err := u.queuesRepo.GetAll(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return queues, nil
+	queues := u.queuesRepo.GetAll(ctx)
+	return queues
 }
 
 // add message to queue
@@ -54,8 +50,10 @@ func (u *queuesUC) AddMessage(ctx context.Context, name string, jsonBody map[str
 		return err
 	}
 
-	if len(queue.Messages) == int(queue.MaxLength) {
-		return fmt.Errorf("too many messages: max amount of messages for queue %v is %v", name, queue.MaxLength)
+	if len(queue.Messages) >= int(queue.MaxLength) {
+		msg := "too many messages: max amount of messages for queue %v is %v"
+		u.logger.Errorf(msg, name, queue.MaxLength)
+		return queues.NewQueueErr(queues.UseCaseErr, fmt.Sprintf(msg, name, queue.MaxLength))
 	}
 
 	queue.AddMessage(jsonBody)
@@ -74,16 +72,16 @@ func (u *queuesUC) AddSubscriber(ctx context.Context, queueName string, subscrib
 	}
 
 	if queue.HasSubscriber(subscriberName) {
-		return fmt.Errorf("user %s has already subscribed to queue %s", subscriberName, queue.Name)
+		return queues.NewQueueErr(queues.UseCaseErr, fmt.Sprintf("user %s has already subscribed to queue %s", subscriberName, queue.Name))
 	}
 
 	if len(queue.Subscribers) == int(queue.MaxSubscribers) {
-		return fmt.Errorf("too many subscribers: max amount of subscribers for queue %v is %v", queueName, queue.MaxSubscribers)
+		return queues.NewQueueErr(queues.UseCaseErr, fmt.Sprintf("too many subscribers: max amount of subscribers for queue %v is %v", queueName, queue.MaxSubscribers))
 	}
 
 	queue.AddSubscriber(subscriberName)
 
-	u.logger.Info("Subscriber %s has been added to queue %s", subscriberName, queue.Name)
+	u.logger.Infof("Subscriber %s has been added to queue %s", subscriberName, queue.Name)
 
 	return nil
 }
@@ -97,7 +95,7 @@ func (u *queuesUC) ConsumeMessages(ctx context.Context, queueName string, subscr
 	}
 
 	if !queue.HasSubscriber(subscriberName) {
-		return nil, fmt.Errorf("queue %v doesn't have subscriber %s", queue.Name, subscriberName)
+		return nil, queues.NewQueueErr(queues.UseCaseErr, fmt.Sprintf("queue %v doesn't have subscriber %s", queue.Name, subscriberName))
 	}
 
 	notSeenMessages := queue.GetNotSeenMessages(subscriberName)

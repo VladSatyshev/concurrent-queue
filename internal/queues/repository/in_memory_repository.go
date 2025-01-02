@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/VladSatyshev/concurrent-queue/config"
@@ -15,11 +14,11 @@ type queuesRepo struct {
 }
 
 func NewQueuesRepository(cfg *config.Config) (queues.Repository, error) {
-	queues := make(map[string]models.Queue, len(cfg.Queues))
+	resQueues := make(map[string]models.Queue, len(cfg.Queues))
 
 	for _, queue := range cfg.Queues {
-		if _, ok := queues[queue.Name]; ok {
-			return nil, fmt.Errorf("queue with name %v already exist", queue.Name)
+		if _, ok := resQueues[queue.Name]; ok {
+			return nil, queues.NewQueueErr(queues.RepositoryErr, fmt.Sprintf("queue with name %v already exist", queue.Name))
 		}
 
 		newQueue := models.Queue{
@@ -30,35 +29,35 @@ func NewQueuesRepository(cfg *config.Config) (queues.Repository, error) {
 			Messages:       make(map[string]models.QueueMessage, queue.Length),
 		}
 
-		queues[queue.Name] = newQueue
+		resQueues[queue.Name] = newQueue
 	}
 
-	return &queuesRepo{queues: queues}, nil
+	return &queuesRepo{queues: resQueues}, nil
 }
 
 func (r *queuesRepo) GetByName(ctx context.Context, name string) (models.Queue, error) {
 	queue, ok := r.queues[name]
 	if !ok {
-		return models.Queue{}, errors.New("queue not found")
+		return models.Queue{}, queues.NewQueueErr(queues.RepositoryErr, fmt.Sprintf("queue %s not found", queue.Name))
 	}
 
 	return queue, nil
 }
 
-func (r *queuesRepo) GetAll(ctx context.Context) ([]models.Queue, error) {
+func (r *queuesRepo) GetAll(ctx context.Context) []models.Queue {
 	res := make([]models.Queue, 0, len(r.queues))
 
 	for _, queue := range r.queues {
 		res = append(res, queue)
 	}
 
-	return res, nil
+	return res
 }
 
 func (r *queuesRepo) AddMessage(ctx context.Context, name string, jsonMsgBody map[string]interface{}) error {
 	q, ok := r.queues[name]
 	if !ok {
-		return errors.New("queue not found")
+		return queues.NewQueueErr(queues.RepositoryErr, fmt.Sprintf("queue %s not found", name))
 	}
 
 	q.AddMessage(jsonMsgBody)
@@ -69,7 +68,7 @@ func (r *queuesRepo) AddMessage(ctx context.Context, name string, jsonMsgBody ma
 func (r *queuesRepo) AddSubscriber(ctx context.Context, queueName string, subscriberName string) error {
 	q, ok := r.queues[queueName]
 	if !ok {
-		return errors.New("queue not found")
+		return queues.NewQueueErr(queues.RepositoryErr, fmt.Sprintf("queue %s not found", queueName))
 	}
 
 	q.Subscribers[subscriberName] = struct{}{}

@@ -21,14 +21,18 @@ func NewQueuesHndlers(cfg *config.Config, queuesUC queues.UseCase, log logger.Lo
 	return &queuesHandlers{cfg: cfg, queuesUC: queuesUC, logger: log}
 }
 
+func HandleError(c *gin.Context, err queues.QueueErr) {
+	switch err.ErrType {
+	case queues.RepositoryErr:
+		c.JSON(http.StatusInternalServerError, err.Error())
+	case queues.UseCaseErr:
+		c.JSON(http.StatusBadRequest, err.Error())
+	}
+}
+
 func (h *queuesHandlers) GetAll() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		queues, err := h.queuesUC.GetAll(c.Request.Context())
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, err.Error())
-			return
-		}
-
+		queues := h.queuesUC.GetAll(c.Request.Context())
 		c.JSON(http.StatusOK, queues)
 	}
 }
@@ -78,7 +82,11 @@ func (h *queuesHandlers) AddMessage() func(c *gin.Context) {
 			return
 		}
 
-		h.queuesUC.AddMessage(c.Request.Context(), queueName, jsonBody)
+		err := h.queuesUC.AddMessage(c.Request.Context(), queueName, jsonBody)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
 
 		c.JSON(http.StatusOK, fmt.Sprintf("message has been added to queue %s", queueName))
 	}
