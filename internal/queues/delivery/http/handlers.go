@@ -1,11 +1,13 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/VladSatyshev/concurrent-queue/config"
 	"github.com/VladSatyshev/concurrent-queue/internal/queues"
 	"github.com/VladSatyshev/concurrent-queue/pkg/logger"
+	"github.com/VladSatyshev/concurrent-queue/pkg/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,6 +26,7 @@ func (h *queuesHandlers) GetAll() func(c *gin.Context) {
 		queues, err := h.queuesUC.GetAll(c.Request.Context())
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
+			return
 		}
 
 		c.JSON(http.StatusOK, queues)
@@ -37,6 +40,7 @@ func (h *queuesHandlers) GetQueueByName() func(c *gin.Context) {
 		queue, err := h.queuesUC.GetByName(c.Request.Context(), name)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
+			return
 		}
 
 		c.JSON(http.StatusOK, queue)
@@ -48,20 +52,19 @@ func (h *queuesHandlers) Subscribe() func(c *gin.Context) {
 
 		queueName := c.Param("queue_name")
 
-		subscriberName, ok := c.Request.Header["X-Subscriber"]
-		if !ok {
-			c.JSON(http.StatusBadRequest, "failed to parse X-Subscriber header")
-		}
-		if len(subscriberName) != 1 {
-			c.JSON(http.StatusBadRequest, "only one subscriber in X-Subscriber header is allowed")
-		}
-
-		err := h.queuesUC.AddSubscriber(c.Request.Context(), queueName, subscriberName[0])
+		subscriberName, err := utils.GetSubscriber(c)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, err.Error())
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
 		}
 
-		c.JSON(http.StatusOK, nil)
+		err = h.queuesUC.AddSubscriber(c.Request.Context(), queueName, subscriberName)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, fmt.Sprintf("user %v has subscribed to queue %s", subscriberName, queueName))
 	}
 }
 
@@ -70,12 +73,33 @@ func (h *queuesHandlers) AddMessage() func(c *gin.Context) {
 		queueName := c.Param("queue_name")
 
 		var jsonBody map[string]interface{}
-		if err := c.BindJSON(jsonBody); err != nil {
+		if err := c.BindJSON(&jsonBody); err != nil {
 			c.JSON(http.StatusBadRequest, err.Error())
+			return
 		}
 
 		h.queuesUC.AddMessage(c.Request.Context(), queueName, jsonBody)
 
-		c.JSON(http.StatusOK, nil)
+		c.JSON(http.StatusOK, fmt.Sprintf("message has been added to queue %s", queueName))
+	}
+}
+
+func (h *queuesHandlers) Consume() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		queueName := c.Param("queue_name")
+
+		subscriberName, err := utils.GetSubscriber(c)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		messages, err := h.queuesUC.ConsumeMessages(c.Request.Context(), queueName, subscriberName)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, messages)
 	}
 }

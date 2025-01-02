@@ -11,6 +11,5 @@ type UseCase interface {
 	GetAll(ctx context.Context) ([]models.Queue, error)
 	AddMessage(ctx context.Context, name string, jsonBody map[string]interface{}) error
 	AddSubscriber(ctx context.Context, queueName string, subscriberName string) error
-
-	// TODO: Consume
+	ConsumeMessages(ctx context.Context, queueName string, subscriberName string) (map[string]interface{}, error)
 }

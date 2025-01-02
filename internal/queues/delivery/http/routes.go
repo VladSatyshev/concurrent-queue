@@ -14,4 +14,5 @@ func MapIntQueueRoutes(intQueueGroup *gin.RouterGroup, h queues.Handlers, mw *mi
 func MapQueueRoutes(queueGroup *gin.RouterGroup, h queues.Handlers, mw *middleware.MiddlewareManager) {
 	queueGroup.POST("/:queue_name/subscriptions", h.Subscribe())
 	queueGroup.POST("/:queue_name/messages", h.AddMessage())
+	queueGroup.GET("/:queue_name/messages", h.Consume())
 }

@@ -44,6 +44,7 @@ func (u *queuesUC) GetAll(ctx context.Context) ([]models.Queue, error) {
 	return queues, nil
 }
 
+// add message to queue
 func (u *queuesUC) AddMessage(ctx context.Context, name string, jsonBody map[string]interface{}) error {
 	queue, err := u.queuesRepo.GetByName(ctx, name)
 	if err != nil {
@@ -59,10 +60,15 @@ func (u *queuesUC) AddMessage(ctx context.Context, name string, jsonBody map[str
 	return nil
 }
 
+// add subscriber to queue
 func (u *queuesUC) AddSubscriber(ctx context.Context, queueName string, subscriberName string) error {
 	queue, err := u.queuesRepo.GetByName(ctx, queueName)
 	if err != nil {
 		return err
+	}
+
+	if queue.HasSubscriber(subscriberName) {
+		return fmt.Errorf("user %s has already subscribed to queue %s", subscriberName, queue.Name)
 	}
 
 	if len(queue.Subscribers) == int(queue.MaxSubscribers) {
@@ -72,4 +78,24 @@ func (u *queuesUC) AddSubscriber(ctx context.Context, queueName string, subscrib
 	queue.AddSubscriber(subscriberName)
 
 	return nil
+}
+
+// consume messages from queue by subscriber
+func (u *queuesUC) ConsumeMessages(ctx context.Context, queueName string, subscriberName string) (map[string]interface{}, error) {
+	queue, err := u.queuesRepo.GetByName(ctx, queueName)
+	if err != nil {
+		return nil, err
+	}
+
+	if !queue.HasSubscriber(subscriberName) {
+		return nil, fmt.Errorf("queue %v doesn't have subscriber %s", queue.Name, subscriberName)
+	}
+
+	notSeenMessages := queue.GetNotSeenMessages(subscriberName)
+
+	queue.SetMessagesSeenBy(subscriberName)
+
+	queue.DeleteSeenByAllMessages()
+
+	return notSeenMessages, nil
 }

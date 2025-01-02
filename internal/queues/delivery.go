@@ -10,4 +10,5 @@ type Handlers interface {
 	// public
 	Subscribe() func(*gin.Context)
 	AddMessage() func(*gin.Context)
+	Consume() func(*gin.Context)
 }

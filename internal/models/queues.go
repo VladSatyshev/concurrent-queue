@@ -27,3 +27,40 @@ func (q *Queue) AddMessage(jsonBody map[string]interface{}) {
 func (q *Queue) AddSubscriber(name string) {
 	q.Subscribers[name] = struct{}{}
 }
+
+func (q *Queue) HasSubscriber(name string) bool {
+	for sub := range q.Subscribers {
+		if sub == name {
+			return true
+		}
+	}
+	return false
+}
+
+func (q *Queue) GetNotSeenMessages(name string) map[string]interface{} {
+	res := map[string]interface{}{}
+
+	for messageID, message := range q.Messages {
+		if _, ok := message.SeenBy[name]; !ok {
+			res[messageID] = message
+		}
+	}
+
+	return res
+}
+
+func (q *Queue) SetMessagesSeenBy(name string) {
+	for _, message := range q.Messages {
+		if _, ok := message.SeenBy[name]; !ok {
+			message.SeenBy[name] = struct{}{}
+		}
+	}
+}
+
+func (q *Queue) DeleteSeenByAllMessages() {
+	for messageID, message := range q.Messages {
+		if len(message.SeenBy) == len(q.Subscribers) {
+			delete(q.Messages, messageID)
+		}
+	}
+}
