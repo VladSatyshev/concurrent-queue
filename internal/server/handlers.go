@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+
 	"github.com/VladSatyshev/concurrent-queue/internal/middleware"
 	queuesHttp "github.com/VladSatyshev/concurrent-queue/internal/queues/delivery/http"
 	queuesRepo "github.com/VladSatyshev/concurrent-queue/internal/queues/repository"
@@ -9,14 +11,14 @@ import (
 
 func (s *Server) MapHandlers() error {
 	// init repositories
-	queuesRepo, err := queuesRepo.NewQueuesRepository(s.cfg)
-	if err != nil {
-		s.logger.Errorf("failed to create queues repository: %s", err.Error())
+	qRepo := queuesRepo.NewQueuesRepository(s.cfg)
+	if err := queuesRepo.InitQueues(context.Background(), s.cfg, qRepo); err != nil {
+		s.logger.Errorf("failed to init queues: %s", err.Error())
 		return err
 	}
 
 	// init usecases
-	queuesUC := queuesUseCase.NewQueuesUseCase(s.cfg, queuesRepo, s.logger)
+	queuesUC := queuesUseCase.NewQueuesUseCase(s.cfg, qRepo, s.logger)
 
 	// init handlers
 	queuesHandlers := queuesHttp.NewQueuesHndlers(s.cfg, queuesUC, s.logger)

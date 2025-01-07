@@ -13,26 +13,37 @@ type queuesRepo struct {
 	queues map[string]models.Queue
 }
 
-func NewQueuesRepository(cfg *config.Config) (queues.Repository, error) {
+func NewQueuesRepository(cfg *config.Config) queues.Repository {
 	resQueues := make(map[string]models.Queue, len(cfg.Queues))
+	return &queuesRepo{queues: resQueues}
+}
 
+func InitQueues(ctx context.Context, cfg *config.Config, r queues.Repository) error {
 	for _, queue := range cfg.Queues {
-		if _, ok := resQueues[queue.Name]; ok {
-			return nil, queues.NewQueueErr(queues.RepositoryErr, fmt.Sprintf("queue with name %v already exist", queue.Name))
+		if _, err := r.Create(ctx, queue.Name, queue.Length, queue.SubscribersAmount); err != nil {
+			return err
 		}
-
-		newQueue := models.Queue{
-			Name:           queue.Name,
-			MaxLength:      queue.Length,
-			MaxSubscribers: queue.SubscribersAmount,
-			Subscribers:    make(map[string]struct{}, queue.SubscribersAmount),
-			Messages:       make(map[string]models.QueueMessage, queue.Length),
-		}
-
-		resQueues[queue.Name] = newQueue
 	}
 
-	return &queuesRepo{queues: resQueues}, nil
+	return nil
+}
+
+func (r *queuesRepo) Create(ctx context.Context, name string, maxLength uint, maxSubscribers uint) (models.Queue, error) {
+	if _, ok := r.queues[name]; ok {
+		return models.Queue{}, queues.NewQueueErr(queues.RepositoryErr, fmt.Sprintf("queue with name %v already exists", name))
+	}
+
+	newQueue := models.Queue{
+		Name:           name,
+		MaxLength:      maxLength,
+		MaxSubscribers: maxSubscribers,
+		Subscribers:    make(map[string]struct{}, maxSubscribers),
+		Messages:       make(map[string]models.QueueMessage, maxLength),
+	}
+
+	r.queues[name] = newQueue
+
+	return newQueue, nil
 }
 
 func (r *queuesRepo) GetByName(ctx context.Context, name string) (models.Queue, error) {
