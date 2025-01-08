@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
+	"flag"
 	"log"
-	"os"
 
 	"github.com/VladSatyshev/concurrent-queue/config"
 	"github.com/VladSatyshev/concurrent-queue/internal/server"
@@ -11,12 +10,16 @@ import (
 	"github.com/VladSatyshev/concurrent-queue/pkg/utils"
 )
 
+const defaultConfigPath = "./config/config-local.yml"
+
 func main() {
 	log.Println("Starting API server")
 
-	configPath := utils.GetConfigPath(os.Getenv("config"))
+	configPathFlag := flag.String("config", defaultConfigPath, "config path")
+	flag.Parse()
 
-	fmt.Println(configPath)
+	configPath := utils.GetConfigPath(*configPathFlag)
+
 	cfgFile, err := config.LoadConfig(configPath)
 	if err != nil {
 		log.Fatalf("LoadConfig: %v", err)

@@ -9,7 +9,7 @@ import (
 
 func (mw *MiddlewareManager) TimeoutMiddleware() gin.HandlerFunc {
 	return timeout.New(
-		timeout.WithTimeout(mw.cfg.Server.ReadTimeout),
+		timeout.WithTimeout(mw.cfg.Server.Timeout),
 		timeout.WithHandler(func(c *gin.Context) {
 			c.Next()
 		}),

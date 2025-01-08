@@ -7,10 +7,10 @@ import (
 )
 
 func GetConfigPath(configPath string) string {
-	switch configPath {
-	default:
+	if configPath == "" {
 		return "./config/config-local.yml"
 	}
+	return configPath
 }
 
 func GetSubscriber(c *gin.Context) (string, error) {
