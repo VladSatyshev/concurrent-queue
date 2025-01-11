@@ -6,7 +6,6 @@ import (
 
 	"github.com/VladSatyshev/concurrent-queue/config"
 	"github.com/VladSatyshev/concurrent-queue/internal/models"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,12 +18,11 @@ func TestQueuesUC_AddMessageToQueue(t *testing.T) {
 		SubscribersAmount: 1,
 	}
 
-	ctrl := gomock.NewController(t)
 	qs := []config.QueueConfig{
 		qConfig,
 	}
 
-	queuesUC, cleanup := configureEnvironment(ctrl, qs)
+	queuesUC, cleanup := configureEnvironment(t, qs)
 	defer cleanup()
 
 	expectedQueue := models.Queue{
@@ -60,12 +58,11 @@ func TestQueuesUC_CantAddMessageToFullQueue(t *testing.T) {
 		SubscribersAmount: 1,
 	}
 
-	ctrl := gomock.NewController(t)
 	qs := []config.QueueConfig{
 		qConfig,
 	}
 
-	queuesUC, cleanup := configureEnvironment(ctrl, qs)
+	queuesUC, cleanup := configureEnvironment(t, qs)
 	defer cleanup()
 
 	msgBody1 := map[string]interface{}{"msg": "hello1"}
@@ -87,14 +84,13 @@ func TestQueuesUC_CanSubscribeToQueue(t *testing.T) {
 		SubscribersAmount: 1,
 	}
 
-	ctrl := gomock.NewController(t)
 	qs := []config.QueueConfig{
 		qConfig,
 	}
 
 	subscriberName := "subscriber"
 
-	queuesUC, cleanup := configureEnvironment(ctrl, qs)
+	queuesUC, cleanup := configureEnvironment(t, qs)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -119,7 +115,6 @@ func TestQueuesUC_CantSubscribeToFullQueue(t *testing.T) {
 		SubscribersAmount: 1,
 	}
 
-	ctrl := gomock.NewController(t)
 	qs := []config.QueueConfig{
 		qConfig,
 	}
@@ -127,7 +122,7 @@ func TestQueuesUC_CantSubscribeToFullQueue(t *testing.T) {
 	subscriberName1 := "subscriber1"
 	subscriberName2 := "subscriber2"
 
-	queuesUC, cleanup := configureEnvironment(ctrl, qs)
+	queuesUC, cleanup := configureEnvironment(t, qs)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -147,7 +142,6 @@ func TestQueuesUC_SubscriberCanConsumeMessagesFromQueue(t *testing.T) {
 		SubscribersAmount: 1,
 	}
 
-	ctrl := gomock.NewController(t)
 	qs := []config.QueueConfig{
 		qConfig,
 	}
@@ -155,7 +149,7 @@ func TestQueuesUC_SubscriberCanConsumeMessagesFromQueue(t *testing.T) {
 	subscriberName := "subscriber"
 	msgBody := map[string]interface{}{"msg": "hello"}
 
-	queuesUC, cleanup := configureEnvironment(ctrl, qs)
+	queuesUC, cleanup := configureEnvironment(t, qs)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -188,7 +182,6 @@ func TestQueuesUC_NonSubscriberCantConsumeMessagesFromQueue(t *testing.T) {
 		SubscribersAmount: 1,
 	}
 
-	ctrl := gomock.NewController(t)
 	qs := []config.QueueConfig{
 		qConfig,
 	}
@@ -196,7 +189,7 @@ func TestQueuesUC_NonSubscriberCantConsumeMessagesFromQueue(t *testing.T) {
 	subscriberName := "not_a_subscriber"
 	msgBody := map[string]interface{}{"msg": "hello"}
 
-	queuesUC, cleanup := configureEnvironment(ctrl, qs)
+	queuesUC, cleanup := configureEnvironment(t, qs)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -217,7 +210,6 @@ func TestQueuesUC_SubscribersCanConsumeMessagesFromQueue(t *testing.T) {
 		SubscribersAmount: 2,
 	}
 
-	ctrl := gomock.NewController(t)
 	qs := []config.QueueConfig{
 		qConfig,
 	}
@@ -226,7 +218,7 @@ func TestQueuesUC_SubscribersCanConsumeMessagesFromQueue(t *testing.T) {
 	subscriberName2 := "subscriber 2"
 	msgBody := map[string]interface{}{"msg": "hello"}
 
-	queuesUC, cleanup := configureEnvironment(ctrl, qs)
+	queuesUC, cleanup := configureEnvironment(t, qs)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -266,14 +258,13 @@ func TestQueuesUC_CantAddSubscribersToNotExistentQueue(t *testing.T) {
 
 	qConfig := config.QueueConfig{}
 
-	ctrl := gomock.NewController(t)
 	qs := []config.QueueConfig{
 		qConfig,
 	}
 
 	subscriberName := "subscriber"
 
-	queuesUC, cleanup := configureEnvironment(ctrl, qs)
+	queuesUC, cleanup := configureEnvironment(t, qs)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -287,14 +278,13 @@ func TestQueuesUC_CantAddMessagesToNotExistentQueue(t *testing.T) {
 
 	qConfig := config.QueueConfig{}
 
-	ctrl := gomock.NewController(t)
 	qs := []config.QueueConfig{
 		qConfig,
 	}
 
 	msgBody := map[string]interface{}{"msg": "hello"}
 
-	queuesUC, cleanup := configureEnvironment(ctrl, qs)
+	queuesUC, cleanup := configureEnvironment(t, qs)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -312,14 +302,13 @@ func TestQueuesUC_CantAddSubscribersToQueueTwice(t *testing.T) {
 		SubscribersAmount: 2,
 	}
 
-	ctrl := gomock.NewController(t)
 	qs := []config.QueueConfig{
 		qConfig,
 	}
 
 	subscriberName := "subscriber"
 
-	queuesUC, cleanup := configureEnvironment(ctrl, qs)
+	queuesUC, cleanup := configureEnvironment(t, qs)
 	defer cleanup()
 
 	ctx := context.Background()

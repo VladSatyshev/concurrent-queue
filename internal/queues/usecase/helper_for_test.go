@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"testing"
 
 	"github.com/VladSatyshev/concurrent-queue/config"
 	"github.com/VladSatyshev/concurrent-queue/internal/models"
@@ -12,7 +13,9 @@ import (
 	"github.com/golang/mock/gomock"
 )
 
-func configureEnvironment(ctrl *gomock.Controller, queuesCfg []config.QueueConfig) (queues.UseCase, func()) {
+func configureEnvironment(t *testing.T, queuesCfg []config.QueueConfig) (queues.UseCase, func()) {
+	ctrl := gomock.NewController(t)
+
 	cfg := &config.Config{
 		Logger: config.LoggerConfig{Development: true, DisableCaller: false, DisableStacktrace: false, Encoding: "json"},
 		Queues: queuesCfg,
