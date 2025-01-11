@@ -24,7 +24,8 @@ func (s *Server) MapHandlers() error {
 	queuesHandlers := queuesHttp.NewQueuesHndlers(s.cfg, queuesUC, s.logger)
 
 	// init & use middleware
-	mw := middleware.NewMiddlewareManager(queuesUC, s.cfg, s.logger)
+	mw := middleware.NewMiddlewareManager(s.cfg, s.logger)
+	s.router.Use(mw.CORSMiddleware())
 	s.router.Use(mw.TimeoutMiddleware())
 
 	v1 := s.router.Group("/v1")

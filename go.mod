@@ -3,6 +3,7 @@ module github.com/VladSatyshev/concurrent-queue
 go 1.22.1
 
 require (
+	github.com/gin-contrib/cors v1.7.3
 	github.com/gin-contrib/timeout v1.0.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang/mock v1.6.0
