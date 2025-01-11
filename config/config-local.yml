@@ -1,7 +1,7 @@
 server:
   Port: :8000
   Mode: Development
-  Timeout: 5
+  TimeoutSec: 5
   CtxDefaultTimeout: 10
 
 logger:

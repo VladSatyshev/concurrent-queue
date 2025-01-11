@@ -17,7 +17,7 @@ type Config struct {
 type ServerConfig struct {
 	Port              string
 	Mode              string
-	Timeout           time.Duration
+	TimeoutSec        time.Duration
 	CtxDefaultTimeout time.Duration
 }
 
